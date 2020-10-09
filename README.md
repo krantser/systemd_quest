@@ -44,7 +44,7 @@ fi
 Теперь создадим юнит сервиса:
 
 ```sh
-sudo vi /usr/lib/systemd/system/watchlog.service
+sudo vi /etc/systemd/system/watchlog.service
 ```
 
 С содержимым:
@@ -62,7 +62,7 @@ ExecStart=/opt/watchlog.sh $WORD $LOG
 Создадим юнит для таймера:
 
 ```sh
-sudo vi /usr/lib/systemd/system/watchlog.timer
+sudo vi /etc/systemd/system/watchlog.timer
 ```
 
 С содержимым:
@@ -98,16 +98,23 @@ sudo systemctl start watchlog.timer
 tail /var/log/watch.log
 ```
 
-По содержимому лог-файла видим, что сервис рабоает:
+По содержимому лог-файла видим, что сервис работает:
 
 ```
 Tue Sep 29 16:22:35 UTC 2020: Word was found...
 Tue Sep 29 16:23:58 UTC 2020: Word was found...
 ```
 
-### 2. Переисать spawn-fcgi init-скрипт на unit-файл.
+Для того, что бы сервис стартовал автоматически с запуском системы следует
+выполнить команды:
 
-Из epel установим spawn-fcgi и переишем инит-скрипт на юнит. Где имя сервиса
+```sh
+systemctl enable watchlog.timer
+```
+
+### 2. Переписать spawn-fcgi init-скрипт на unit-файл.
+
+Из epel установим spawn-fcgi и перепишем инит-скрипт на юнит. Где имя сервиса
 будет называться аналогично.
 
 Для начала установим необходимые пакеты:
@@ -218,7 +225,8 @@ sudo systemctl status spawn-fcgi
 Для начала отредактируем файл веб-сервера:
 
 ```sh
-sudo vi /usr/lib/systemd/system/httpd.service
+sudo mv /usr/lib/systemd/system/httpd.service /etc/systemd/system/httpd-@.service
+sudo vi /etc/systemd/system/httpd-@.service
 ```
 
 И приведём его к виду:
@@ -356,6 +364,13 @@ sudo systemctl status httpd-@second.service
            ├─4052 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
            ├─4053 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
            └─4054 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+```
+
+Для автоматического старта экземпляров сервера следует выполнить команды:
+
+```sh
+sudo systemctl enable httpd-@first.service
+sudo systemctl enable httpd-@second.service
 ```
 
 Как видно, экземпляры сервера работают. На данном этапе работа завершена.
